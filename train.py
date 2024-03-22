@@ -14,6 +14,7 @@ import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 from torch.cuda import amp
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 from pcseg.data import build_dataloader
 from pcseg.model import build_network, load_data_to_gpu
 from pcseg.optim import build_optimizer, build_scheduler
@@ -97,15 +98,25 @@ def parse_config():
                         help='')
     parser.add_argument('--tcp_port', type=int, default=18888,
                         help='tcp port for distrbuted training')
+    parser.add_argument('--use_wandb', action='store_true', default=False, help='whether to use wandb')
+    parser.add_argument('--debug', action='store_true', default=False, help='debug setting')
 
     args = parser.parse_args()
 
     cfg_from_yaml_file(args.cfg_file, cfgs)
     cfgs.TAG = Path(args.cfg_file).stem
     cfgs.EXP_GROUP_PATH = '/'.join(args.cfg_file.split('/')[2:-1])
+    args.extra_tag = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') if args.extra_tag == 'default' else args.extra_tag
 
     if args.set_cfgs is not None:
         cfg_from_list(args.set_cfgs, cfgs)
+
+    if args.debug:
+        args.batch_size = 1 if args.batch_size is None else args.batch_size
+        args.workers = 0
+        args.epochs = 1 if args.epochs is None else args.epochs
+        args.extra_tag = 'debug'
+        cfgs.DATA.DEBUG = True
 
     return args, cfgs
 
@@ -114,7 +125,7 @@ class Trainer:
 
     def __init__(self, args, cfgs):
         # set init
-        log_dir, ckp_dir, logger, logger_tb, if_dist_train, total_gpus, cfgs = \
+        log_dir, ckp_dir, log_file, logger, logger_tb, if_dist_train, total_gpus, cfgs = \
             self.init(args, cfgs)
         self.args = args
         self.cfgs = cfgs
@@ -126,6 +137,8 @@ class Trainer:
         # set logger
         self.logger = logger
         self.logger_tb = logger_tb
+        self.log_file = log_file
+        self.use_wandb = args.use_wandb
 
         # set device
         self.if_amp = args.amp
@@ -254,7 +267,7 @@ class Trainer:
         if args.fix_random_seed:
             common_utils.set_random_seed(42)
 
-        log_dir = cfgs.ROOT_DIR / 'logs' / cfgs.EXP_GROUP_PATH / cfgs.TAG / args.extra_tag
+        log_dir = cfgs.ROOT_DIR / 'output' / cfgs.EXP_GROUP_PATH / cfgs.TAG / args.extra_tag
         ckp_dir = log_dir / 'ckp'
         log_dir.mkdir(parents=True, exist_ok=True)
         ckp_dir.mkdir(parents=True, exist_ok=True)
@@ -279,8 +292,13 @@ class Trainer:
             os.system('cp %s %s' % (args.cfg_file, log_dir))
 
         logger_tb = SummaryWriter(log_dir=str(log_dir / 'tensorboard')) if cfgs.LOCAL_RANK == 0 else None
+        if cfgs.LOCAL_RANK == 0 and args.use_wandb:
+            project_name = os.path.abspath(__file__).split(os.sep)[-2]
+            wandb.init(project=project_name, config=cfgs, dir=log_dir)
+            wandb.run.tags = cfgs.EXP_GROUP_PATH.split('/') + [cfgs.TAG]
+            wandb.run.name = args.extra_tag
 
-        return log_dir, ckp_dir, logger, logger_tb, if_dist_train, total_gpus, cfgs
+        return log_dir, ckp_dir, log_file, logger, logger_tb, if_dist_train, total_gpus, cfgs
 
     def save_checkpoint(self):
         trained_epoch = self.cur_epoch + 1
@@ -351,6 +369,8 @@ class Trainer:
 
             if self.logger_tb is not None:
                 self.logger_tb.add_scalar('meta_data/learning_rate', cur_lr, self.it)
+            if self.rank == 0 and self.use_wandb:
+                wandb.log({'meta_data/learning_rate': cur_lr}, step=self.it)
 
             self.model.train()
             self.optimizer.zero_grad()
@@ -399,6 +419,12 @@ class Trainer:
                     self.logger_tb.add_scalar('meta_data/learning_rate', cur_lr, self.it)
                     for key, val in tb_dict.items():
                         self.logger_tb.add_scalar('train/' + key, val, self.it)
+                if self.rank == 0 and self.use_wandb:
+                    wandb.log({'meta_data/learning_rate': cur_lr}, step=self.it)
+                    train_metrics_by_iter = {'train/loss': loss}
+                    for key, val in tb_dict.items():
+                        train_metrics_by_iter.update({'train/' + key: val})
+                    wandb.log(train_metrics_by_iter, step=self.it)
 
         if 'Range' not in data_cfg.DATASET:
             self.loader.dataset.point_cloud_dataset.resample()  
@@ -464,6 +490,12 @@ class Trainer:
         
         val_miou = np.nanmean(iou) * 100
         self.logger_tb.add_scalar(f"{prefix}_miou", val_miou, self.cur_epoch + 1)
+        if self.use_wandb:
+            val_metrics_by_epoch = {'val/epoch': self.cur_epoch+1}
+            for class_name, class_iou in zip(class_names[1:], iou):
+                val_metrics_by_epoch.update({f"{prefix}/{class_name}": class_iou * 100})
+            
+            wandb.log(val_metrics_by_epoch)
 
         # logger confusion matrix and
         table_xy = PrettyTable()
@@ -542,6 +574,12 @@ class Trainer:
                 
                 time.sleep(1)
             
+        if self.rank == 0 and self.use_wandb:
+            file_artifact = wandb.Artifact(type='file', name=wandb.run.name)
+            file_artifact.add_file(self.log_file)
+            file_artifact.add_file(self.args.cfg_file)
+            wandb.log_artifact(file_artifact)
+            wandb.finish()
 
 def main():
     args, cfgs = parse_config()

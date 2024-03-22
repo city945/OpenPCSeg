@@ -62,6 +62,10 @@ class SemantickittiDataset(data.Dataset):
         for seq in self.seqs:
             self.annos += absoluteFilePaths('/'.join([self.root_path, str(seq).zfill(2), 'velodyne']))
         self.annos.sort()
+
+        if self.data_cfgs.get("DEBUG", False):
+            self.annos = self.annos[:32]
+
         self.annos_another = self.annos.copy()
         random.shuffle(self.annos_another)
         print(f'The total sample is {len(self.annos)}')
@@ -76,6 +80,7 @@ class SemantickittiDataset(data.Dataset):
             self.resample()
         else:
             self.sample_idx = self._sample_idx
+        
 
     def __len__(self):
         return len(self.sample_idx)

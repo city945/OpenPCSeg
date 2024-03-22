@@ -4,8 +4,8 @@ __version__
 **__pycache__**
 **egg-info**
 
-data_root
-data_root/
+# data_root
+# data_root/
 infer_data
 infer_data/
 output/
