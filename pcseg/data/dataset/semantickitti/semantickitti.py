@@ -5,6 +5,7 @@ from .semantickitti_utils import LEARNING_MAP
 from .LaserMix_semantickitti import lasermix_aug
 from .PolarMix_semantickitti import polarmix
 import random
+import pu4c
 
 # used for polarmix
 instance_classes = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -64,7 +65,7 @@ class SemantickittiDataset(data.Dataset):
         self.annos.sort()
 
         if self.data_cfgs.get("DEBUG", False):
-            self.annos = self.annos[:32]
+            self.annos = self.annos[:16]
 
         self.annos_another = self.annos.copy()
         random.shuffle(self.annos_another)
@@ -86,7 +87,7 @@ class SemantickittiDataset(data.Dataset):
         return len(self.sample_idx)
 
     def resample(self):
-        self.sample_idx = np.random.choice(self._sample_idx, self.samples_per_epoch)
+        self.sample_idx = pu4c.nprandom.choice(self._sample_idx, self.samples_per_epoch)
     
     def get_kitti_points_ringID(self, points):
         scan_x = points[:, 0]
@@ -119,7 +120,7 @@ class SemantickittiDataset(data.Dataset):
             annotated_data = annotated_data & 0xFFFF
             annotated_data = np.vectorize(LEARNING_MAP.__getitem__)(annotated_data)
 
-        prob = np.random.choice(2, 1)
+        prob = pu4c.nprandom.choice(2, 1)
         if self.augment == 'GlobalAugment_LP':
             if self.split == 'train' and prob == 1:
                 raw_data1 = np.fromfile(self.annos_another[index], dtype=np.float32).reshape((-1, 4))
@@ -160,7 +161,7 @@ class SemantickittiDataset(data.Dataset):
                 annotated_data1 = annotated_data1 & 0xFFFF
                 annotated_data1 = np.vectorize(LEARNING_MAP.__getitem__)(annotated_data1)
                 assert len(annotated_data1) == len(raw_data1)
-                alpha = (np.random.random() - 1) * np.pi
+                alpha = (pu4c.nprandom.random() - 1) * np.pi
                 beta = alpha + np.pi
                 annotated_data1 = annotated_data1.reshape(-1)
                 annotated_data = annotated_data.reshape(-1)

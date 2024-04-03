@@ -17,6 +17,7 @@ import torchsparse.nn.functional as F
 from torchsparse.nn.utils import get_kernel_offsets
 from torchsparse import PointTensor, SparseTensor
 from torchsparse.utils.quantize import sparse_quantize
+import pu4c
 
 
 def torch_unique(x):
@@ -60,7 +61,7 @@ def aug_points(
             angle_vec_new = [cnt * np.pi / 8.0 for cnt in angle_vec]
             theta = angle_vec_new[num_vote]
         else:
-            theta = np.random.uniform(0, 2 * np.pi)
+            theta = pu4c.nprandom.uniform(0, 2 * np.pi)
         rot_mat = np.array([
             [np.cos(theta), np.sin(theta), 0],
             [-np.sin(theta), np.cos(theta), 0],
@@ -71,7 +72,7 @@ def aug_points(
     # aug (random scale)
     if if_scale:
         #scale_range = [0.95, 1.05]
-        scale_factor = np.random.uniform(scale_range[0], scale_range[1])
+        scale_factor = pu4c.nprandom.uniform(scale_range[0], scale_range[1])
         xyz = xyz * scale_factor
 
     # aug (random flip)
@@ -79,7 +80,7 @@ def aug_points(
         if if_tta:
             flip_type = num_vote
         else:
-            flip_type = np.random.choice(4, 1)
+            flip_type = pu4c.nprandom.choice(4, 1)
         
         if flip_type == 1:
             xyz[:, 0] = -xyz[:, 0]
@@ -91,9 +92,9 @@ def aug_points(
     # aug (random jitter)
     if if_jitter:
         noise_translate = np.array([
-            np.random.normal(0, 0.1, 1),
-            np.random.normal(0, 0.1, 1),
-            np.random.normal(0, 0.1, 1),
+            pu4c.nprandom.normal(0, 0.1, 1),
+            pu4c.nprandom.normal(0, 0.1, 1),
+            pu4c.nprandom.normal(0, 0.1, 1),
         ]).T
         xyz += noise_translate
     

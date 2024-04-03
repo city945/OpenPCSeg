@@ -4,10 +4,11 @@ from pathlib import Path
 import numpy as np
 import torch.utils.data as torch_data
 
-from tools.utils.common import common_utils
+from pcseg.utils import common_utils
 # from ..augmentor.data_augmentor import DataAugmentor
 # from ..processor.data_processor import DataProcessor
 # from ..processor.point_feature_encoder import PointFeatureEncoder
+import pu4c
 
 
 class DatasetTemplate(torch_data.Dataset):
@@ -159,7 +160,7 @@ class DatasetTemplate(torch_data.Dataset):
         )
 
         if self.training and len(data_dict['gt_boxes']) == 0:
-            new_index = np.random.randint(self.__len__())
+            new_index = pu4c.nprandom.randint(self.__len__())
             return self.__getitem__(new_index)
 
         data_dict.pop('gt_names', None)

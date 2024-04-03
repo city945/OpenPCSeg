@@ -1,4 +1,5 @@
 import numpy as np
+import pu4c
 
 
 class LaserScan:
@@ -104,15 +105,15 @@ class LaserScan:
     # data aug (drop)
     if self.if_drop:
       max_num_drop = int(len(points) * 0.1)  # drop ~10%
-      num_drop = np.random.randint(low=0, high=max_num_drop)
-      self.points_to_drop = np.random.randint(low=0, high=len(points)-1, size=num_drop)
+      num_drop = pu4c.nprandom.randint(low=0, high=max_num_drop)
+      self.points_to_drop = pu4c.nprandom.randint(low=0, high=len(points)-1, size=num_drop)
       self.points_to_drop = np.unique(self.points_to_drop)
       points = np.delete(points, self.points_to_drop, axis=0)
       intensity = np.delete(intensity, self.points_to_drop)
 
     # data aug (flip)
     if self.if_flip:
-      flip_type = np.random.choice(4, 1)
+      flip_type = pu4c.nprandom.choice(4, 1)
       if flip_type == 1:
         points[:, 0] = -points[:, 0]  # flip x
       elif flip_type == 2:
@@ -123,15 +124,15 @@ class LaserScan:
     # data aug (scale)
     if self.if_scale:
       scale = 1.05  # [-5%, +5%]
-      rand_scale = np.random.uniform(1, scale)
-      if np.random.random() < 0.5:
+      rand_scale = pu4c.nprandom.uniform(1, scale)
+      if pu4c.nprandom.random() < 0.5:
         rand_scale = 1 / scale
       points[:, 0] *= rand_scale
       points[:, 1] *= rand_scale
 
     # data aug (rotate)
     if self.if_rotate:
-      rotate_rad = np.deg2rad(np.random.random() * 360)
+      rotate_rad = np.deg2rad(pu4c.nprandom.random() * 360)
       c, s = np.cos(rotate_rad), np.sin(rotate_rad)
       j = np.matrix([[c, s], [-s, c]])
       points[:, :2] = np.dot(points[:, :2], j)
@@ -139,7 +140,7 @@ class LaserScan:
     # data aug (jitter)
     if self.if_jitter:
       jitter = 0.1
-      rand_jitter = np.clip(np.random.normal(0, jitter, 3), -3 * jitter, 3 * jitter)
+      rand_jitter = np.clip(pu4c.nprandom.normal(0, jitter, 3), -3 * jitter, 3 * jitter)
       points += rand_jitter
     
     self.set_points(points, intensity)
@@ -279,7 +280,7 @@ class SemLaserScan(LaserScan):
 
     # make instance colors
     max_inst_id = 100000
-    self.inst_color_lut = np.random.uniform(low=0.0, high=1.0, size=(max_inst_id, 3))
+    self.inst_color_lut = pu4c.nprandom.uniform(low=0.0, high=1.0, size=(max_inst_id, 3))
 
     # force zero to a gray-ish color
     self.inst_color_lut[0] = np.full((3), 0.1)

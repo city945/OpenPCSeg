@@ -3,6 +3,7 @@ import numpy as np
 from torch.utils import data
 import random
 import pickle
+import pu4c
 
 class WaymoDataset(data.Dataset):
     def __init__(
@@ -70,7 +71,7 @@ class WaymoDataset(data.Dataset):
         return len(self.sample_idx)
 
     def resample(self):
-        self.sample_idx = np.random.choice(self._sample_idx, self.samples_per_epoch)
+        self.sample_idx = pu4c.nprandom.choice(self._sample_idx, self.samples_per_epoch)
 
     def __getitem__(self, index):
         index = self.sample_idx[index]

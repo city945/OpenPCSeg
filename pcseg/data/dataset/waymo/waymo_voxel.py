@@ -7,7 +7,8 @@ from torchsparse import SparseTensor
 from torchsparse.utils.collate import sparse_collate_fn
 from torchsparse.utils.quantize import sparse_quantize
 from itertools import accumulate
-from tools.utils.common.seg_utils import aug_points
+from pcseg.utils.seg_utils import aug_points
+import pu4c
 
 
 class WaymoVoxelDataset(data.Dataset):
@@ -125,7 +126,7 @@ class WaymoVoxelDataset(data.Dataset):
         )
         if self.training and len(inds) > self.num_points:  # NOTE: num_points must always bigger than self.num_points
             raise RuntimeError('droping point')
-            inds = np.random.choice(inds, self.num_points, replace=False)
+            inds = pu4c.nprandom.choice(inds, self.num_points, replace=False)
 
         pc = pc_[inds]
         feat = feat_[inds]

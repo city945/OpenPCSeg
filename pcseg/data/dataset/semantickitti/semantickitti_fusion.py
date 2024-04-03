@@ -12,7 +12,7 @@ from torchsparse import SparseTensor
 from torchsparse.utils.collate import sparse_collate_fn
 from torchsparse.utils.quantize import sparse_quantize
 from itertools import accumulate
-from tools.utils.common.seg_utils import aug_points
+from pcseg.utils.seg_utils import aug_points
 import cv2
 from collections import defaultdict
 

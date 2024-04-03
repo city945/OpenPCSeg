@@ -5,7 +5,7 @@ import torch
 from torch.utils import data
 from torchsparse.utils.quantize import sparse_quantize
 from .waymo import WaymoDataset
-from tools.utils.common.seg_utils import aug_points
+from pcseg.utils.seg_utils import aug_points
 
 
 # transformation between Cartesian coordinates and polar coordinates

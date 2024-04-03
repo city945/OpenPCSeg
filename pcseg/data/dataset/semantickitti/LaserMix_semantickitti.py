@@ -6,6 +6,7 @@ LaserMix for Semi-Supervised LiDAR Semantic Segmentation
 
 
 import numpy as np
+import pu4c
 
 
 def lasermix_aug(xyzi_sup, label_sup, xyzi_unsup, label_unsup):
@@ -29,7 +30,7 @@ def lasermix_aug(xyzi_sup, label_sup, xyzi_unsup, label_unsup):
         # strategies = ['rho3phi1', 'rho3phi2', 'rho4phi1', 'rho4phi2', 'rho5phi1', 'rho5phi2', 'rho6phi1', 'rho6phi2',]
         # strategies = ['inc3phi1', 'inc3phi2', 'inc4phi1', 'inc4phi2', 'inc5phi1', 'inc5phi2', 'inc6phi1', 'inc6phi2']
         strategies = ['inc3phi1', 'inc4phi1', 'inc5phi1', 'inc6phi1']
-        strategy = np.random.choice(strategies, size=1)[0]
+        strategy = pu4c.nprandom.choice(strategies, size=1)[0]
 
     if strategy == 'inc3phi1':
 

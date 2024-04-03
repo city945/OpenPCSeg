@@ -18,9 +18,9 @@ import wandb
 from pcseg.data import build_dataloader
 from pcseg.model import build_network, load_data_to_gpu
 from pcseg.optim import build_optimizer, build_scheduler
-from tools.utils.common import common_utils, commu_utils
-from tools.utils.train.config import cfgs, cfg_from_list, cfg_from_yaml_file, log_config_to_file
-from tools.utils.train_utils import model_state_to_cpu
+from pcseg.utils import common_utils, commu_utils
+from pcseg.config import cfgs, cfg_from_list, cfg_from_yaml_file, log_config_to_file
+from pcseg.utils.common_utils import model_state_to_cpu
 
 
 def get_n_params(model):
@@ -72,15 +72,15 @@ def parse_config():
                         help='number of epochs for model training.')
     parser.add_argument('--sync_bn', action='store_true', default=False,
                         help='whether to use sync bn.')
-    parser.add_argument('--ckp', type=str, default=None,
+    parser.add_argument('--ckpt', type=str, default=None,
                         help='checkpoint to start from')
     parser.add_argument('--pretrained_model', type=str, default=None,
                         help='pretrained_model')
     parser.add_argument('--amp', action='store_true', default=False,
                         help='whether to use mixture precision training.')
-    parser.add_argument('--ckp_save_interval', type=int, default=1,
+    parser.add_argument('--ckpt_save_interval', type=int, default=1,
                         help='number of training epochs')
-    parser.add_argument('--max_ckp_save_num', type=int, default=30,
+    parser.add_argument('--max_ckpt_save_num', type=int, default=30,
                         help='max number of saved checkpoint')
     parser.add_argument('--merge_all_iters_to_one_epoch', action='store_true', default=False,
                         help='')
@@ -149,7 +149,7 @@ class Trainer:
         self.total_epoch = args.epochs
         self.if_dist_train = if_dist_train
         self.eval_interval = args.eval_interval
-        self.ckp_save_interval = args.ckp_save_interval
+        self.ckpt_save_interval = args.ckpt_save_interval
     
         # set dataloader
         dataset, loader, sampler = build_dataloader(
@@ -213,8 +213,8 @@ class Trainer:
         # -----------------------resume---------------------------
         if cfgs.LOCAL_RANK == 0:
             print('resuming...')
-        if args.ckp is not None:
-            self.resume(args.ckp)
+        if args.ckpt is not None:
+            self.resume(args.ckpt)
         else:
             ckp_list = glob.glob(str(ckp_dir / '*checkpoint_epoch_*.pth'))
             if cfgs.LOCAL_RANK == 0:
@@ -268,11 +268,11 @@ class Trainer:
             common_utils.set_random_seed(42)
 
         log_dir = cfgs.ROOT_DIR / 'output' / cfgs.EXP_GROUP_PATH / cfgs.TAG / args.extra_tag
-        ckp_dir = log_dir / 'ckp'
+        ckp_dir = log_dir / 'ckpt'
         log_dir.mkdir(parents=True, exist_ok=True)
         ckp_dir.mkdir(parents=True, exist_ok=True)
 
-        log_file = log_dir / ('log_train_%s.txt' % datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+        log_file = log_dir / ('log_train_%s.log' % datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
         logger = common_utils.create_logger(log_file, rank=cfgs.LOCAL_RANK)
 
         # log to file
@@ -534,7 +534,7 @@ class Trainer:
                 self.cur_epoch = cur_epoch
                 self.train_one_epoch(tbar, self.cfgs.DATA)
                 trained_epoch = cur_epoch + 1
-                if trained_epoch % self.ckp_save_interval == 0 and self.rank == 0:
+                if trained_epoch % self.ckpt_save_interval == 0 and self.rank == 0:
                     self.save_checkpoint()
                 
                 if (cur_epoch+1) % self.eval_interval == 0 or cur_epoch == self.total_epoch-1:

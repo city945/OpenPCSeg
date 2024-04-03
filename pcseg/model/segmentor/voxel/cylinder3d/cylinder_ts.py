@@ -16,7 +16,7 @@ import torchsparse.nn as spnn
 from torchsparse import PointTensor
 from pcseg.model.segmentor.base_segmentors import BaseSegmentor
 from pcseg.loss import Losses
-from tools.utils.common.seg_utils import voxelize
+from pcseg.utils.seg_utils import voxelize
 
 __all__ = ['Cylinder_TS']
 

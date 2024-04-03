@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import DistributedSampler as _DistributedSampler
-from tools.utils.common import common_utils
+from pcseg.utils import common_utils
 
 from .dataset.semantickitti import SemkittiRangeViewDataset, SemkittiVoxelDataset, SemkittiCylinderDataset, SemkittiFusionDataset
 from .dataset.waymo import WaymoVoxelDataset, WaymoCylinderDataset, WaymoFusionDataset

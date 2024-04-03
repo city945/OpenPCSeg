@@ -4,6 +4,7 @@ This file is copied from https://github.com/xiaoaoran/polarmix
 
 
 import numpy as np
+import pu4c
 instance_classes_kitti = [1, 2, 3, 4, 5, 6, 7, 8]
 
 def swap(pt1, pt2, start_angle, end_angle, label1, label2):
@@ -60,11 +61,11 @@ def rotate_copy(pts, labels, instance_classes, Omega):
 def polarmix(pts1, labels1, pts2, labels2, alpha, beta, instance_classes, Omega):
     pts_out, labels_out = pts1, labels1
     # swapping
-    if np.random.random() < 0.5:
+    if pu4c.nprandom.random() < 0.5:
         pts_out, _, labels_out, _ = swap(pts1, pts2, start_angle=alpha, end_angle=beta, label1=labels1, label2=labels2)
 
     # rotate-pasting
-    if np.random.random() < 1.0:
+    if pu4c.nprandom.random() < 1.0:
         # rotate-copy
         pts_copy, labels_copy = rotate_copy(pts2, labels2, instance_classes, Omega)
         # paste

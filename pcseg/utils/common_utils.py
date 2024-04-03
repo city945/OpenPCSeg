@@ -264,3 +264,9 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+def model_state_to_cpu(model_state):
+    model_state_cpu = type(model_state)()  # ordered dict
+    for key, val in model_state.items():
+        model_state_cpu[key] = val.cpu()
+    return model_state_cpu

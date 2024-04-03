@@ -9,7 +9,7 @@ from .focalloss import FocalLoss
 from .eqlv2 import EQLv2
 from .group_softmax import GroupSoftmax
 from .group_softmax_fgbg_2 import GroupSoftmax_fgbg_2
-from tools.utils.common.lovasz_losses import lovasz_softmax
+from pcseg.utils.lovasz_losses import lovasz_softmax
 
 
 class Losses(nn.Module):
