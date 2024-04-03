@@ -7,9 +7,6 @@ from .PolarMix_semantickitti import polarmix
 import random
 import pu4c
 
-# used for polarmix
-instance_classes = [1, 2, 3, 4, 5, 6, 7, 8]
-Omega = [np.random.random() * np.pi * 2 / 3, (np.random.random() + 1) * np.pi * 2 / 3]
 
 def absoluteFilePaths(directory):
     for dirpath, _, filenames in os.walk(directory):
@@ -67,8 +64,9 @@ class SemantickittiDataset(data.Dataset):
         if self.data_cfgs.get("DEBUG", False):
             self.annos = self.annos[:16]
 
-        self.annos_another = self.annos.copy()
-        random.shuffle(self.annos_another)
+        rand_ids = np.arange(len(self.annos))
+        pu4c.nprandom.shuffle(rand_ids)
+        self.annos_another = np.array(self.annos.copy())[rand_ids]
         print(f'The total sample is {len(self.annos)}')
 
         self._sample_idx = np.arange(len(self.annos))
@@ -81,6 +79,10 @@ class SemantickittiDataset(data.Dataset):
             self.resample()
         else:
             self.sample_idx = self._sample_idx
+
+        # used for polarmix
+        self.instance_classes = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.Omega = [pu4c.nprandom.random() * np.pi * 2 / 3, (pu4c.nprandom.random() + 1) * np.pi * 2 / 3]
         
 
     def __len__(self):
@@ -168,7 +170,7 @@ class SemantickittiDataset(data.Dataset):
                 raw_data, annotated_data = polarmix(
                     raw_data, annotated_data, raw_data1, annotated_data1,
                     alpha=alpha, beta=beta,
-                    instance_classes=instance_classes, Omega=Omega
+                    instance_classes=self.instance_classes, Omega=self.Omega
                 )
                 annotated_data = annotated_data.reshape(-1, 1)
         

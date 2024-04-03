@@ -80,7 +80,13 @@ def aug_points(
         if if_tta:
             flip_type = num_vote
         else:
-            flip_type = pu4c.nprandom.choice(4, 1)
+            # flip_type = pu4c.nprandom.choice(4, 1)
+            flip_x = pu4c.nprandom.choice([False, True], replace=False, p=[0.5, 0.5])
+            flip_y = pu4c.nprandom.choice([False, True], replace=False, p=[0.5, 0.5])
+            if flip_y and not flip_x: flip_type = 1
+            elif flip_x and not flip_y: flip_type = 2
+            elif flip_x and flip_y: flip_type = 3
+            else: flip_type = 4
         
         if flip_type == 1:
             xyz[:, 0] = -xyz[:, 0]
