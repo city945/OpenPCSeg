@@ -9,7 +9,7 @@ from torch.utils import data
 from .semantickitti import SemantickittiDataset
 from torchsparse import SparseTensor
 from torchsparse.utils.collate import sparse_collate_fn
-from torchsparse.utils.quantize import sparse_quantize
+from torchsparse.utils.quantize import sparse_quantize, ravel_hash
 from itertools import accumulate
 from pcseg.utils.seg_utils import aug_points
 import pu4c
@@ -112,6 +112,9 @@ class SemkittiVoxelDataset(data.Dataset):
 
         pc_ = np.round(point[:, :3] / self.voxel_size).astype(np.int32)
         pc_ -= pc_.min(0, keepdims=1)
+        # pc_ = point[:, :3] - point[:, :3].min(0, keepdims=1)
+        # pc_ = np.floor(pc_ / self.voxel_size).astype(np.int32)
+
         feat_ = point
         _, inds, inverse_map = sparse_quantize(
             pc_,
@@ -119,6 +122,8 @@ class SemkittiVoxelDataset(data.Dataset):
             return_inverse=True,
         
         )
+        # _, inds, inverse_map = np.unique(ravel_hash(pc_), return_index=True, return_inverse=True)
+        
         if self.training and len(inds) > self.num_points:  # NOTE: num_points must always bigger than self.num_points
             raise RuntimeError('droping point')
             inds = pu4c.nprandom.choice(inds, self.num_points, replace=False)
