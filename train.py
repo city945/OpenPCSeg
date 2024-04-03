@@ -492,6 +492,7 @@ class Trainer:
         self.logger_tb.add_scalar(f"{prefix}_miou", val_miou, self.cur_epoch + 1)
         if self.use_wandb:
             val_metrics_by_epoch = {'val/epoch': self.cur_epoch+1}
+            val_metrics_by_epoch.update({f"val/miou": val_miou})
             for class_name, class_iou in zip(class_names[1:], iou):
                 val_metrics_by_epoch.update({f"{prefix}/{class_name}": class_iou * 100})
             

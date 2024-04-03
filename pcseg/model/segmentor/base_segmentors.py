@@ -25,16 +25,18 @@ class BaseSegmentor(nn.Module):
 
         return self.load_state_dict(part_load, strict=strict)
 
-    def load_params_from_file(self, filename, logger, to_cpu=False):
+    def load_params_from_file(self, filename, logger=None, to_cpu=False):
         if not os.path.isfile(filename):
             raise FileNotFoundError
-        logger.info('==> Loading parameters from checkpoint %s to %s' % (filename, 'CPU' if to_cpu else 'GPU'))
+        if logger:
+            logger.info('==> Loading parameters from checkpoint %s to %s' % (filename, 'CPU' if to_cpu else 'GPU'))
         loc_type = torch.device('cpu') if to_cpu else None
         model_state_disk = torch.load(filename, map_location=loc_type)
         if 'model_state' in model_state_disk:
             model_state_disk = model_state_disk['model_state']
         msg = self.load_params(model_state_disk)
-        logger.info(f"==> Done {msg}")
+        if logger:
+            logger.info(f"==> Done {msg}")
 
     def forward(self, batch_dict):
         raise NotImplementedError

@@ -17,7 +17,7 @@ def write_version_to_file(version, target_file):
 
 if __name__ == '__main__':
     version = '1.0.0+%s' % get_git_commit_number()
-    write_version_to_file(version, '__version__')
+    write_version_to_file(version, 'pcseg/__version__')
 
     setup(
         name='pcseg',
